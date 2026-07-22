@@ -1,19 +1,16 @@
-from datetime import datetime
+from typing import Annotated, Literal
 
-from pydantic import BaseModel
+from fastapi import FastAPI, Query
+from pydantic import BaseModel, Field
 
-class User(BaseModel):
-    id: int
-    name: str = "join"
-    signup_ts: datetime | None = None
-    friends: list[int] = []
+app = FastAPI()
 
-external_data = {
-    "id": "123",
-    "signup_ts": "2017-06-01 12:22",
-    "friends": [1, "2", b"3"],
-}
+class FilterParams(BaseModel):
+    limit: int = Field(100, gt =0, le = 100)
+    offset: int = Field(0, ge = 0)
+    order_by: Literal["created_at", "updated_at"] = "created_at"
+    tags: list[str] = []
 
-user = User(**external_data)
-print(user)
-print(user.id)
+@app.get("/itmes/")
+async def read_items(filter_query: Annotated[FilterParams, Query()]):
+    return filter_query
