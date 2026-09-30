@@ -4,16 +4,14 @@ from urllib.parse import urlparse, parse_qs
 class Request:
     def __init__(self, raw: str):
         head, _, body = raw.partition("\r\n\r\n")
-        lines = body.split("\r\n")
-        method, target = lines[0].split(" ")
+        lines = head.split("\r\n")
+        method, target, _ = lines[0].split(" ")
+        parsed = urlparse(target)
 
         self.method = method
-        parsed = urlparse(target)
         self.path = parsed.path
-
         self.query = parse_qs(parsed.query)
         self.body = body
-
         self.headers = {}
         for line in lines[1:]:
             if ":" in line:
@@ -45,7 +43,7 @@ class App:
 
     def route(self, path, method = "GET"):
         def decorator(func):
-            self.routes[path, method] = func
+            self.routes[(path, method)] = func
             return func
         return decorator
     def handle(self, raw_request: str) -> bytes:
@@ -66,7 +64,7 @@ class App:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind((host, port))
         server.listen(5)
-        print("Listening...")
+        print(f"* Serving on http://{host}:{port}")
 
         while True:
             # 接收请求
